@@ -1,3 +1,5 @@
+"use strict";
+
 const User = require('../models/user');
 
 const sgMail = require('@sendgrid/mail');
@@ -22,8 +24,8 @@ exports.register = async (req, res) => {
         }
 
         const newUser = new User({ ...req.body, role: "basic" });
-
         const user_ = await newUser.save();
+
         sendEmail(user_, req, res);
     } catch (error) {
         res.status(500).json({
@@ -32,6 +34,7 @@ exports.register = async (req, res) => {
         });
     }
 };
+
 
 
 // @route POST api/auth/login
@@ -75,6 +78,7 @@ exports.login = async (req, res) => {
         });
     }
 };
+
 
 
 // ===EMAIL VERIFICATION
@@ -129,6 +133,8 @@ exports.verify = async (req, res) => {
     }
 };
 
+
+
 // @route POST api/resend
 // @desc Resend Verification Token
 // @access Public
@@ -156,7 +162,9 @@ exports.resendToken = async (req, res) => {
     }
 };
 
-function sendEmail(user, req, res){
+
+
+function sendEmail(user, req, res) {
     const token = user.generateVerificationToken();
 
     // Save the verification token
@@ -171,9 +179,12 @@ function sendEmail(user, req, res){
             to: user.email,
             from: process.env.FROM_EMAIL,
             subject: 'Account Verification Token',
-            text: `Hi ${user.username} \n 
-                    Please click on the following link ${link} to verify your account. \n\n 
+            text: `Hi ${user.username}\n 
+                    Please click on the following link ${link} to verify your account.\n\n 
                     If you did not request this, please ignore this email.\n`,
+            html: `Hi <strong>${user.username}</strong>\n
+                    Please click on the following link ${link} to verify your account.\n\n 
+                    If you did not request this, please ignore this email.\n`
         };
 
         sgMail.send(mailOptions, (error, result) => {

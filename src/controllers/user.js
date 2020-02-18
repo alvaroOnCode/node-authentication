@@ -1,3 +1,5 @@
+"use strict";
+
 const multer = require('multer');
 const Datauri = require('datauri');
 const path = require('path');
@@ -5,14 +7,14 @@ const path = require('path');
 const User = require('../models/user');
 const cloudinary = require('../config/cloudinary');
 
-multer_upload = multer().single('profileImage');
+const multer_upload = multer().single('profileImage');
 
 // @route GET admin/user
 // @desc Returns all users
 // @access Public
 exports.index = async function (req, res) {
     const users = await User.find({});
-    res.status(200).json({users});
+    res.status(200).json({ users });
 };
 
 // @route GET api/user/{id}
@@ -52,7 +54,7 @@ exports.update = async function (req, res) {
             });
         }
 
-        const user = await User.findByIdAndUpdate(id, {$set: update}, {new: true});
+        const user = await User.findByIdAndUpdate(id, { $set: update }, { new: true });
 
         res.status(200).json({
             user,
@@ -96,13 +98,13 @@ exports.upload = function (req, res) {
             return res.status(500).json({ message: err.message });
         }
 
-        const {id} = req.user;
+        const { id } = req.user;
         const dUri = new Datauri();
         let image = dUri.format(path.extname(req.file.originalname).toString(), req.file.buffer);
 
         cloudinary.uploader.upload(image.content)
-            .then((result) => User.findByIdAndUpdate(id, {$set: {profileImage: result.url}}, {new: true}))
-            .then(user => res.status(200).json({user}))
-            .catch((error) => res.status(500).json({message: error.message}))
+            .then((result) => User.findByIdAndUpdate(id, { $set: { profileImage: result.url } }, { new: true }))
+            .then(user => res.status(200).json({ user }))
+            .catch((error) => res.status(500).json({ message: error.message }))
     })
 };

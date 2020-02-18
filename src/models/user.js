@@ -1,3 +1,5 @@
+"use strict";
+
 const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
@@ -48,12 +50,12 @@ const UserSchema = new mongoose.Schema({
         required: false,
         max: 255
     },
-    
+
     isVerified: {
         type: Boolean,
         default: false
     },
-    
+
     resetPasswordToken: {
         type: String,
         required: false
@@ -63,22 +65,22 @@ const UserSchema = new mongoose.Schema({
         type: Date,
         required: false
     }
-}, {timestamps: true});
+}, { timestamps: true });
 
 
-UserSchema.pre('save',  function(next) {
+UserSchema.pre('save', function (next) {
     const user = this;
 
     if (!user.isModified('password')) {
         return next();
     }
 
-    bcrypt.genSalt(10, function(err, salt) {
+    bcrypt.genSalt(10, function (err, salt) {
         if (err) {
             return next(err);
         }
 
-        bcrypt.hash(user.password, salt, function(err, hash) {
+        bcrypt.hash(user.password, salt, function (err, hash) {
             if (err) {
                 return next(err);
             }
@@ -89,11 +91,11 @@ UserSchema.pre('save',  function(next) {
     });
 });
 
-UserSchema.methods.comparePassword = function(password) {
+UserSchema.methods.comparePassword = function (password) {
     return bcrypt.compareSync(password, this.password);
 };
 
-UserSchema.methods.generateJWT = function() {
+UserSchema.methods.generateJWT = function () {
     const today = new Date();
     const expirationDate = new Date(today);
     expirationDate.setDate(today.getDate() + 60);
@@ -111,12 +113,12 @@ UserSchema.methods.generateJWT = function() {
     });
 };
 
-UserSchema.methods.generatePasswordReset = function() {
+UserSchema.methods.generatePasswordReset = function () {
     this.resetPasswordToken = crypto.randomBytes(20).toString('hex');
     this.resetPasswordExpires = Date.now() + 3600000; //expires in an hour
 };
 
-UserSchema.methods.generateVerificationToken = function() {
+UserSchema.methods.generateVerificationToken = function () {
     let payload = {
         userId: this._id,
         token: crypto.randomBytes(20).toString('hex')
@@ -125,4 +127,4 @@ UserSchema.methods.generateVerificationToken = function() {
     return new Token(payload);
 };
 
-module.exports = mongoose.model('Users', UserSchema);
+module.exports = mongoose.model('User', UserSchema);
