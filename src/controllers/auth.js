@@ -125,7 +125,7 @@ exports.verify = async (req, res) => {
                     });
                 }
 
-                res.status(200).send("The account has been verified. Please log in.");
+                res.status(200).send("The account has been verified. Please log in.").redirect(process.env.CLIENT_HOST_NAME + "verify");
             });
         });
     } catch (error) {
@@ -179,12 +179,14 @@ function sendEmail(user, req, res) {
             to: user.email,
             from: process.env.FROM_EMAIL,
             subject: 'Account Verification Token',
-            text: `Hi ${user.username}\n 
-                    Please click on the following link ${link} to verify your account.\n\n 
-                    If you did not request this, please ignore this email.\n`,
-            html: `Hi <strong>${user.username}</strong><br/>
-                    Please click on the following link ${link} to verify your account.<br/><br/> 
-                    If you did not request this, please ignore this email.<br/>`
+            text: `Hi, ${user.username}!\n\n
+                    Please click on the following link ${link} to verify your account.\n\n\n\n
+                    If you did not request this, please ignore this email.\n\n\n\n
+                    Cheers!\n`,
+            html: `Hi, <strong>${user.username}!</strong><br/><br/> 
+                    Please click on the following link ${link} to verify your account.<br/><br/><br/><br/> 
+                    If you did not request this, please ignore this email.<br/><br/><br/><br/>
+                    Cheers!<br/><br/>`
         };
 
         sgMail.send(mailOptions, (error, result) => {
