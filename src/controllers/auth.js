@@ -125,7 +125,8 @@ exports.verify = async (req, res) => {
                     });
                 }
 
-                res.status(200).send("The account has been verified. Please log in.").redirect(process.env.CLIENT_HOST_NAME + "verify");
+                console.log("The account has been verified. Please log in.");
+                res.status(200).redirect(process.env.CLIENT_HOST_NAME + "verify");
             });
         });
     } catch (error) {
