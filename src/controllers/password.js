@@ -37,8 +37,8 @@ exports.recover = async (req, res) => {
                     text: `Hi ${user.username}\n 
                     Please click on the following link ${link} to reset your password.\n\n 
                     If you did not request this, please ignore this email and your password will remain unchanged.\n`,
-                    html: `Hi ${user.username}\n
-                    Please click on the following link ${link} to reset your password.\n\n 
+                    html: `Hi <strong>${user.username}</strong>!<br/>
+                    Please click on the following link ${link} to reset your password.<br/><br/> 
                     If you did not request this, please ignore this email and your password will remain unchanged.\n`,
                 };
 
@@ -121,8 +121,8 @@ exports.resetPassword = (req, res) => {
                     subject: "Your password has been changed",
                     text: `Hi ${user.username} \n 
                             This is a confirmation that the password for your account ${user.email} has just been changed.\n`,
-                    html: `Hi ${user.username} \n 
-                            This is a confirmation that the password for your account ${user.email} has just been changed.\n`
+                    html: `Hi <strong>${user.username}!</strong><br/>
+                            This is a confirmation that the password for your account ${user.email} has just been changed.<br/>`
                 };
 
                 sgMail.send(mailOptions, (error, result) => {

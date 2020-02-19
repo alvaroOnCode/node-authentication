@@ -182,9 +182,9 @@ function sendEmail(user, req, res) {
             text: `Hi ${user.username}\n 
                     Please click on the following link ${link} to verify your account.\n\n 
                     If you did not request this, please ignore this email.\n`,
-            html: `Hi <strong>${user.username}</strong>\n
-                    Please click on the following link ${link} to verify your account.\n\n 
-                    If you did not request this, please ignore this email.\n`
+            html: `Hi <strong>${user.username}</strong><br/>
+                    Please click on the following link ${link} to verify your account.<br/><br/> 
+                    If you did not request this, please ignore this email.<br/>`
         };
 
         sgMail.send(mailOptions, (error, result) => {
