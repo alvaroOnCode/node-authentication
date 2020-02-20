@@ -28,18 +28,18 @@ exports.recover = async (req, res) => {
         // Save the updated user object
         user.save()
             .then(user => {
-                // send email
                 let link = "http://" + req.headers.host + "/api/auth/reset/" + user.resetPasswordToken;
+
                 const mailOptions = {
                     to: user.email,
                     from: process.env.FROM_EMAIL,
                     subject: "Password change request",
-                    text: `Hi ${user.username}\n 
-                    Please click on the following link ${link} to reset your password.\n\n 
-                    If you did not request this, please ignore this email and your password will remain unchanged.\n`,
-                    html: `Hi <strong>${user.username}</strong>!<br/>
-                    Please click on the following link ${link} to reset your password.<br/><br/> 
-                    If you did not request this, please ignore this email and your password will remain unchanged.\n`,
+                    text: `Hi, ${user.username}\n\n
+                            Please click on the following link ${link} to reset your password.\n\n\n
+                            If you did not request this, please ignore this email and your password will remain unchanged.\n\n`,
+                    html: `Hi, <strong>${user.username}</strong>!<br/><br/>
+                            Please click on the following link ${link} to reset your password.<br/><br/><br/> 
+                            If you did not request this, please ignore this email and your password will remain unchanged.<br/><br/>`,
                 };
 
                 sgMail.send(mailOptions, (error, result) => {
@@ -52,7 +52,7 @@ exports.recover = async (req, res) => {
                     });
                 });
             })
-            .catch(err => res.status(500).json({ message: err.message }));
+            .catch(error => res.status(500).json({ message: error.message }));
     } catch (error) {
         res.status(500).json({ message: error.message })
     }
@@ -119,10 +119,10 @@ exports.resetPassword = (req, res) => {
                     to: user.email,
                     from: process.env.FROM_EMAIL,
                     subject: "Your password has been changed",
-                    text: `Hi ${user.username} \n 
-                            This is a confirmation that the password for your account ${user.email} has just been changed.\n`,
-                    html: `Hi <strong>${user.username}!</strong><br/>
-                            This is a confirmation that the password for your account ${user.email} has just been changed.<br/>`
+                    text: `Hi, ${user.username}!\n\n
+                            This is a confirmation that the password for your account ${user.email} has just been changed.\n\n`,
+                    html: `Hi, <strong>${user.username}!</strong><br/><br/>
+                            This is a confirmation that the password for your account ${user.email} has just been changed.<br/><br/>`
                 };
 
                 sgMail.send(mailOptions, (error, result) => {
