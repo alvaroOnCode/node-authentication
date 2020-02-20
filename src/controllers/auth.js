@@ -48,7 +48,7 @@ exports.login = async (req, res) => {
 
         if (!user) {
             return res.status(401).json({
-                msg: 'The email address ' + email + ' is not associated with any account. Double-check your email address and try again.'
+                message: 'The email address ' + email + ' is not associated with any account. Double-check your email address and try again.'
             });
         }
 
@@ -87,9 +87,8 @@ exports.login = async (req, res) => {
 // @access Public
 exports.verify = async (req, res) => {
     if (!req.params.token) {
-        return res.status(400).json({
-            message: "We were unable to find a user for this token."
-        });
+        console.log("We were unable to find a user for this token.");
+        return res.status(400).redirect(process.env.CLIENT_HOST_NAME + "not-found");
     }
 
     try {
@@ -97,23 +96,20 @@ exports.verify = async (req, res) => {
         const token = await Token.findOne({ token: req.params.token });
 
         if (!token) {
-            return res.status(400).json({
-                message: 'We were unable to find a valid token. Your token my have expired.'
-            });
+            console.log("We were unable to find a valid token. Your token may have expired.");
+            return res.status(400).redirect(process.env.CLIENT_HOST_NAME + "not-found/expired");
         }
 
         // If we found a token, find a matching user
         User.findOne({ _id: token.userId }, (err, user) => {
             if (!user) {
-                return res.status(400).json({
-                    message: 'We were unable to find a user for this token.'
-                });
+                console.log("We were unable to find a user for this token.");
+                return res.status(400).redirect(process.env.CLIENT_HOST_NAME + "not-found");
             }
 
             if (user.isVerified) {
-                return res.status(400).json({
-                    message: 'This user has already been verified.'
-                });
+                console.log("This user has already been verified.");
+                return res.status(400).redirect(process.env.CLIENT_HOST_NAME + "verify/verified");
             }
 
             // Verify and save the user
@@ -181,12 +177,13 @@ function sendEmail(user, req, res) {
             from: process.env.FROM_EMAIL,
             subject: 'Account Verification Token',
             text: `Hi, ${user.username}!\n\n
-                    Please click on the following link ${link} to verify your account.\n\n\n\n
-                    If you did not request this, please ignore this email.\n\n\n\n
-                    Cheers!\n`,
-            html: `Hi, <strong>${user.username}!</strong><br/><br/> 
-                    Please click on the following link ${link} to verify your account.<br/><br/><br/><br/> 
-                    If you did not request this, please ignore this email.<br/><br/><br/><br/>
+                    Please click on the following link ${link} to verify your account.\n\n
+                    If you did not request this, please ignore this email.\n\n
+                    Cheers!\n\n`,
+            html: `Hi, <strong>${user.username}!</strong><br/><br/>
+                    Please click on the following link to verify your account:<br/><br/>
+                    ${link}<br/><br/>
+                    If you did not request this, please ignore this email.<br/><br/>
                     Cheers!<br/><br/>`
         };
 
