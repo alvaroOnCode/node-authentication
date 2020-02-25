@@ -35,10 +35,12 @@ exports.recover = async (req, res) => {
                     from: process.env.FROM_EMAIL,
                     subject: "Password change request",
                     text: `Hi, ${user.username}\n\n
-                            Please click on the following link ${link} to reset your password.\n\n\n
+                            Please click on the following link to reset your password:\n\n\n
+                            ${link}\n\n\n
                             If you did not request this, please ignore this email and your password will remain unchanged.\n\n`,
                     html: `Hi, <strong>${user.username}</strong>!<br/><br/>
-                            Please click on the following link ${link} to reset your password.<br/><br/><br/> 
+                            Please click on the following link to reset your password:<br/><br/><br/>
+                            ${link}<br/><br/><br/>
                             If you did not request this, please ignore this email and your password will remain unchanged.<br/><br/>`,
                 };
 
@@ -79,9 +81,9 @@ exports.reset = async (req, res) => {
         }
 
         // Redirect user to form with the email address
-        res.render('reset', { user });
+        res.status(200).redirect(process.env.CLIENT_HOST_NAME + "reset-password/" + token);
     } catch (error) {
-        res.status(500).json({ message: error.message })
+        res.status(500).json({ message: error.message });
     }
 };
 
@@ -91,6 +93,8 @@ exports.reset = async (req, res) => {
 // @desc Reset Password
 // @access Public
 exports.resetPassword = (req, res) => {
+    console.log("resetPassword:", req.params.token);
+
     User.findOne({
         resetPasswordToken: req.params.token,
         resetPasswordExpires: { $gt: Date.now() }

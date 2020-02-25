@@ -55,7 +55,7 @@ exports.login = async (req, res) => {
         // Validate password
         if (!user.comparePassword(password)) {
             return res.status(401).json({
-                message: 'Invalid email or password'
+                message: 'Invalid email or password.'
             });
         }
 
@@ -87,7 +87,7 @@ exports.login = async (req, res) => {
 // @access Public
 exports.verify = async (req, res) => {
     if (!req.params.token) {
-        console.log("We were unable to find a user for this token.");
+        console.log("No token in params.");
         return res.status(400).redirect(process.env.CLIENT_HOST_NAME + "not-found");
     }
 
@@ -97,7 +97,7 @@ exports.verify = async (req, res) => {
 
         if (!token) {
             console.log("We were unable to find a valid token. Your token may have expired.");
-            return res.status(400).redirect(process.env.CLIENT_HOST_NAME + "not-found/expired");
+            return res.status(400).redirect(process.env.CLIENT_HOST_NAME + "expired");
         }
 
         // If we found a token, find a matching user
@@ -121,7 +121,7 @@ exports.verify = async (req, res) => {
                     });
                 }
 
-                console.log("The account has been verified. Please log in.");
+                console.log("The account has been verified successfully. Please log in.");
                 res.status(200).redirect(process.env.CLIENT_HOST_NAME + "verify");
             });
         });
