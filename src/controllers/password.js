@@ -93,8 +93,6 @@ exports.reset = async (req, res) => {
 // @desc Reset Password
 // @access Public
 exports.resetPassword = (req, res) => {
-    console.log("resetPassword:", req.params.token);
-
     User.findOne({
         resetPasswordToken: req.params.token,
         resetPasswordExpires: { $gt: Date.now() }
@@ -135,7 +133,7 @@ exports.resetPassword = (req, res) => {
                     }
 
                     res.status(200).json({
-                        message: 'Your password has been updated.'
+                        message: 'Your password has been changed.'
                     });
                 });
             });
