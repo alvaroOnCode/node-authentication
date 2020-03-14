@@ -1,9 +1,10 @@
 "use strict";
 
-const User = require('../models/user');
+// Config
+const transporter = require('../config/nodemailer');
 
-const sgMail = require('@sendgrid/mail');
-sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+// Models
+const User = require('../models/user');
 
 
 
@@ -45,20 +46,22 @@ exports.recover = async (req, res) => {
                             If you did not request this, please ignore this email and your password will remain unchanged.<br/><br/>`,
                 };
 
-                sgMail.send(mailOptions, (error, result) => {
-                    if (error) {
-                        console.error("recover:", error);
-                        return res.status(500).json({
-                            success: false,
-                            message: error.message
+                transporter.sendMail(mailOptions)
+                    .then(data => {
+                        return res.status(200).json({
+                            success: true,
+                            message: 'A reset email has been sent to ' + user.email + '.'
                         });
-                    }
-
-                    return res.status(200).json({
-                        success: true,
-                        message: 'A reset email has been sent to ' + user.email + '.'
+                    })
+                    .catch(error => {
+                        if (error) {
+                            console.error("recover:", error);
+                            return res.status(500).json({
+                                success: false,
+                                message: error.message
+                            });
+                        }
                     });
-                });
             })
             .catch(error => {
                 return res.status(500).json({
@@ -133,7 +136,7 @@ exports.resetPassword = (req, res) => {
             user.save((err) => {
                 if (err) {
                     return res.status(500).json({
-                        success: false,message: err.message
+                        success: false, message: err.message
                     });
                 }
 

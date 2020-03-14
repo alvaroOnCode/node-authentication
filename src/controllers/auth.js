@@ -1,11 +1,13 @@
 "use strict";
 
+// Nodemailer Transporter
+const transporter = require('../config/nodemailer');
+
+// Models
 const User = require('../models/user');
-
-const sgMail = require('@sendgrid/mail');
-sgMail.setApiKey(process.env.SENDGRID_API_KEY);
-
 const Token = require('../models/token');
+
+
 
 // @route POST api/auth/register
 // @desc Register user
@@ -184,54 +186,6 @@ exports.resendToken = async (req, res) => {
 
 
 
-/*function sendEmail(user, req, res) {
-    const token = user.generateVerificationToken();
-
-    // Save the verification token
-    token.save(function (err) {
-        if (err) {
-            console.error("sendEmail:", err);
-            return res.status(500).json({
-                success: false,
-                message: err.message
-            });
-        }
-
-        const link = "http://" + req.headers.host + "/api/auth/verify/" + token.token;
-
-        const mailOptions = {
-            to: user.email,
-            from: process.env.FROM_EMAIL,
-            subject: 'Account Verification Token',
-            text: `Hi, ${user.username}!\n\n
-                    Please click on the following link to verify your account:\n\n
-                    ${link}\n\n
-                    If you did not request this, please ignore this email.\n\n
-                    Cheers!\n\n`,
-            html: `Hi, <strong>${user.username}!</strong><br/><br/>
-                    Please click on the following link to verify your account:<br/><br/>
-                    ${link}<br/><br/>
-                    If you did not request this, please ignore this email.<br/><br/>
-                    Cheers!<br/><br/>`
-        };
-
-        sgMail.send(mailOptions, (error, result) => {
-            if (error) {
-                console.error("sendEmail:", error);
-                return res.status(500).json({
-                    success: false,
-                    message: error.message
-                });
-            }
-
-            return res.status(200).json({
-                success: true,
-                message: 'A verification email has been sent to ' + user.email + '.'
-            });
-        });
-    });
-}*/
-
 function sendEmailNodemailer(user, req, res) {
     const token = user.generateVerificationToken();
 
@@ -247,18 +201,7 @@ function sendEmailNodemailer(user, req, res) {
 
         const link = "http://" + req.headers.host + "/api/auth/verify/" + token.token;
 
-        let transporter = nodemailer.createTransport({
-            host: 'smtp.gmail.com',
-            port: 465,
-            secure: true,
-            auth: {
-                type: 'OAuth2',
-                clientId: process.env.NODEMAILER_CLIENT_ID,
-                clientSecret: process.env.NODEMAILER_CLIENT_SECRET
-            }
-        });
-
-        const data = {
+        const mailOptions = {
             from: process.env.NODEMAILER_FROM_EMAIL,
             to: user.email,
             subject: 'Account Verification Token',
@@ -272,15 +215,16 @@ function sendEmailNodemailer(user, req, res) {
                     ${link}<br/><br/>
                     If you did not request this, please ignore this email.<br/><br/>
                     Cheers!<br/><br/>`,
+
             auth: {
                 user: process.env.NODEMAILER_FROM_EMAIL,
-                refreshToken: process.env.NODEMAILER_REFRESH_TOKEN,
-                accessToken: process.env.NODEMAILER_ACCESS_TOKEN,
+                refreshToken: process.env.GOOGLE_API_OAUTH2_REFRESH_TOKEN,
+                accessToken: process.env.GOOGLE_API_OAUTH2_ACCESS_TOKEN,
                 expires: 1484314697598
             }
         };
 
-        transporter.sendMail(data)
+        transporter.sendMail(mailOptions)
             .then(data => {
                 return res.status(200).json({
                     success: true,
@@ -295,6 +239,6 @@ function sendEmailNodemailer(user, req, res) {
                         message: error.message
                     });
                 }
-            })
+            });
     });
 }
