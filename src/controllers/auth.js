@@ -18,7 +18,9 @@ exports.register = async (req, res) => {
         const user = await User.findOne({ email });
 
         if (user) {
+            console.log("The email address you have entered is already associated with another account.");
             return res.status(401).json({
+                success: false,
                 message: 'The email address you have entered is already associated with another account.'
             });
         }
@@ -26,9 +28,10 @@ exports.register = async (req, res) => {
         const newUser = new User({ ...req.body, role: "basic" });
         const user_ = await newUser.save();
 
-        sendEmail(user_, req, res);
+        sendEmailNodemailer(user_, req, res);
     } catch (error) {
-        res.status(500).json({
+        console.error("register:", error);
+        return res.status(500).json({
             success: false,
             message: error.message
         });
@@ -43,37 +46,44 @@ exports.register = async (req, res) => {
 exports.login = async (req, res) => {
     try {
         const { email, password } = req.body;
-
         const user = await User.findOne({ email });
 
         if (!user) {
+            console.log("The email address " + email + " is not associated with any account. Double-check your email address and try again.");
             return res.status(401).json({
+                success: false,
                 message: 'The email address ' + email + ' is not associated with any account. Double-check your email address and try again.'
             });
         }
 
         // Validate password
         if (!user.comparePassword(password)) {
+            console.log("Invalid email or password.");
             return res.status(401).json({
+                success: false,
                 message: 'Invalid email or password.'
             });
         }
 
         // Make sure the user has been verified
         if (!user.isVerified) {
+            console.log("Your account has not been verified.");
             return res.status(401).json({
-                type: 'not-verified',
+                success: false,
                 message: 'Your account has not been verified.'
             });
         }
 
         // Login successful, write token and send back user
-        res.status(200).json({
+        return res.status(200).json({
+            success: true,
             token: user.generateJWT(),
             user: user
         });
     } catch (error) {
-        res.status(500).json({
+        console.error("login:", error);
+        return res.status(500).json({
+            success: false,
             message: error.message
         });
     }
@@ -114,19 +124,25 @@ exports.verify = async (req, res) => {
 
             // Verify and save the user
             user.isVerified = true;
+
             user.save(function (err) {
                 if (err) {
+                    console.error("verify:", err);
                     return res.status(500).json({
+                        success: false,
                         message: err.message
                     });
                 }
 
-                console.log("The account has been verified successfully. Please log in.");
-                res.status(200).redirect(process.env.CLIENT_HOST_NAME + "verify");
+                return res.status(200).redirect(process.env.CLIENT_HOST_NAME + "verify");
             });
         });
     } catch (error) {
-        res.status(500).json({ message: error.message })
+        console.error("verify:", error);
+        return res.status(500).json({
+            success: false,
+            message: error.message
+        });
     }
 };
 
@@ -138,46 +154,58 @@ exports.verify = async (req, res) => {
 exports.resendToken = async (req, res) => {
     try {
         const { email } = req.body;
-
         const user = await User.findOne({ email });
 
         if (!user) {
+            console.log("The email address " + req.body.email + " is not associated with any account. Double-check your email address and try again.");
             return res.status(401).json({
+                success: false,
                 message: 'The email address ' + req.body.email + ' is not associated with any account. Double-check your email address and try again.'
             });
         }
 
         if (user.isVerified) {
+            console.log("This account has already been verified. Please log in.");
             return res.status(400).json({
+                success: false,
                 message: 'This account has already been verified. Please log in.'
             });
         }
 
-        sendEmail(user, req, res);
+        sendEmailNodemailer(user, req, res);
     } catch (error) {
-        res.status(500).json({ message: error.message })
+        console.error("resendToken:", error);
+        return res.status(500).json({
+            success: false,
+            message: error.message
+        });
     }
 };
 
 
 
-function sendEmail(user, req, res) {
+/*function sendEmail(user, req, res) {
     const token = user.generateVerificationToken();
 
     // Save the verification token
     token.save(function (err) {
         if (err) {
-            return res.status(500).json({ message: err.message });
+            console.error("sendEmail:", err);
+            return res.status(500).json({
+                success: false,
+                message: err.message
+            });
         }
 
-        let link = "http://" + req.headers.host + "/api/auth/verify/" + token.token;
+        const link = "http://" + req.headers.host + "/api/auth/verify/" + token.token;
 
         const mailOptions = {
             to: user.email,
             from: process.env.FROM_EMAIL,
             subject: 'Account Verification Token',
             text: `Hi, ${user.username}!\n\n
-                    Please click on the following link ${link} to verify your account.\n\n
+                    Please click on the following link to verify your account:\n\n
+                    ${link}\n\n
                     If you did not request this, please ignore this email.\n\n
                     Cheers!\n\n`,
             html: `Hi, <strong>${user.username}!</strong><br/><br/>
@@ -189,10 +217,84 @@ function sendEmail(user, req, res) {
 
         sgMail.send(mailOptions, (error, result) => {
             if (error) {
-                return res.status(500).json({ message: error.message });
+                console.error("sendEmail:", error);
+                return res.status(500).json({
+                    success: false,
+                    message: error.message
+                });
             }
 
-            res.status(200).json({ message: 'A verification email has been sent to ' + user.email + '.' });
+            return res.status(200).json({
+                success: true,
+                message: 'A verification email has been sent to ' + user.email + '.'
+            });
         });
+    });
+}*/
+
+function sendEmailNodemailer(user, req, res) {
+    const token = user.generateVerificationToken();
+
+    // Save the verification token
+    token.save(function (err) {
+        if (err) {
+            console.error("sendEmailNodemailer:", err);
+            return res.status(500).json({
+                success: false,
+                message: err.message
+            });
+        }
+
+        const link = "http://" + req.headers.host + "/api/auth/verify/" + token.token;
+
+        let transporter = nodemailer.createTransport({
+            host: 'smtp.gmail.com',
+            port: 465,
+            secure: true,
+            auth: {
+                type: 'OAuth2',
+                clientId: process.env.NODEMAILER_CLIENT_ID,
+                clientSecret: process.env.NODEMAILER_CLIENT_SECRET
+            }
+        });
+
+        const data = {
+            from: process.env.NODEMAILER_FROM_EMAIL,
+            to: user.email,
+            subject: 'Account Verification Token',
+            text: `Hi, ${user.username}!\n\n
+                    Please click on the following link to verify your account:\n\n
+                    ${link}\n\n
+                    If you did not request this, please ignore this email.\n\n
+                    Cheers!\n\n`,
+            html: `Hi, <strong>${user.username}!</strong><br/><br/>
+                    Please click on the following link to verify your account:<br/><br/>
+                    ${link}<br/><br/>
+                    If you did not request this, please ignore this email.<br/><br/>
+                    Cheers!<br/><br/>`,
+            auth: {
+                user: process.env.NODEMAILER_FROM_EMAIL,
+                refreshToken: process.env.NODEMAILER_REFRESH_TOKEN,
+                accessToken: process.env.NODEMAILER_ACCESS_TOKEN,
+                expires: 1484314697598
+            }
+        };
+
+        transporter.sendMail(data)
+            .then(data => {
+                return res.status(200).json({
+                    success: true,
+                    message: 'A verification email has been sent to ' + user.email + '.'
+                });
+            })
+            .catch(error => {
+                if (error) {
+                    console.error("sendEmailNodemailer:", error);
+                    return res.status(500).json({
+                        success: false,
+                        message: error.message
+                    });
+                }
+            })
     });
 }

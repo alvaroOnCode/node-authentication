@@ -13,11 +13,12 @@ sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 exports.recover = async (req, res) => {
     try {
         const { email } = req.body;
-
         const user = await User.findOne({ email });
 
         if (!user) {
+            console.log("The email address " + req.body.email + " is not associated with any account. Double-check your email address and try again.");
             return res.status(401).json({
+                success: false,
                 message: 'The email address ' + req.body.email + ' is not associated with any account. Double-check your email address and try again.'
             });
         }
@@ -28,7 +29,7 @@ exports.recover = async (req, res) => {
         // Save the updated user object
         user.save()
             .then(user => {
-                let link = "http://" + req.headers.host + "/api/auth/reset/" + user.resetPasswordToken;
+                const link = "http://" + req.headers.host + "/api/auth/reset/" + user.resetPasswordToken;
 
                 const mailOptions = {
                     to: user.email,
@@ -46,17 +47,30 @@ exports.recover = async (req, res) => {
 
                 sgMail.send(mailOptions, (error, result) => {
                     if (error) {
-                        return res.status(500).json({ message: error.message });
+                        console.error("recover:", error);
+                        return res.status(500).json({
+                            success: false,
+                            message: error.message
+                        });
                     }
 
-                    res.status(200).json({
+                    return res.status(200).json({
+                        success: true,
                         message: 'A reset email has been sent to ' + user.email + '.'
                     });
                 });
             })
-            .catch(error => res.status(500).json({ message: error.message }));
+            .catch(error => {
+                return res.status(500).json({
+                    success: false,
+                    message: error.message
+                });
+            });
     } catch (error) {
-        res.status(500).json({ message: error.message })
+        return res.status(500).json({
+            success: false,
+            message: error.message
+        });
     }
 };
 
@@ -76,14 +90,18 @@ exports.reset = async (req, res) => {
 
         if (!user) {
             return res.status(401).json({
+                success: false,
                 message: 'Password reset token is invalid or has expired.'
             });
         }
 
         // Redirect user to form with the email address
-        res.status(200).redirect(process.env.CLIENT_HOST_NAME + "reset-password/" + token);
+        return res.status(200).redirect(process.env.CLIENT_HOST_NAME + "reset-password/" + token);
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        return res.status(500).json({
+            success: false,
+            message: error.message
+        });
     }
 };
 
@@ -100,6 +118,7 @@ exports.resetPassword = (req, res) => {
         .then((user) => {
             if (!user) {
                 return res.status(401).json({
+                    success: false,
                     message: 'Password reset token is invalid or has expired.'
                 });
             }
@@ -113,7 +132,9 @@ exports.resetPassword = (req, res) => {
             // Save
             user.save((err) => {
                 if (err) {
-                    return res.status(500).json({ message: err.message });
+                    return res.status(500).json({
+                        success: false,message: err.message
+                    });
                 }
 
                 // send email
@@ -129,14 +150,23 @@ exports.resetPassword = (req, res) => {
 
                 sgMail.send(mailOptions, (error, result) => {
                     if (error) {
-                        return res.status(500).json({ message: error.message });
+                        return res.status(500).json({
+                            success: false,
+                            message: error.message
+                        });
                     }
 
-                    res.status(200).json({
+                    return res.status(200).json({
+                        success: true,
                         message: 'Your password has been changed.'
                     });
                 });
             });
         })
-        .catch(error => res.status(500).json({ message: error.message }));
+        .catch(error => {
+            return res.status(500).json({
+                success: false,
+                message: error.message
+            });
+        });
 };
